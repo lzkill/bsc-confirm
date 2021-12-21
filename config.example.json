@@ -1,0 +1,24 @@
+{
+  "app": {
+    "name": "bsc-confirm",
+    "enabled": true
+  },
+  "biscoint": {
+    "apiKey": "",
+    "apiSecret": "",
+    "apiUrl": "https://api.biscoint.io/",
+    "apiTimeout": 15000
+  },
+  "papertrail": {
+    "token": "",
+    "enabled": true
+  },
+  "rabbitmq": {
+    "uri": ""
+  },
+  "telegram": {
+    "token": "",
+    "chatId": "",
+    "enabled": true
+  }
+}
