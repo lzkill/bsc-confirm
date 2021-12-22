@@ -1,6 +1,9 @@
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
-import { IOfferResult } from 'biscoint-api-node/dist/typings/biscoint';
+import {
+  IMetaResult,
+  IOfferResult,
+} from 'biscoint-api-node/dist/typings/biscoint';
 import {
   RABBITMQ_BISCOINT_CONFIRM_KEY,
   RABBITMQ_BISCOINT_EXCHANGE,
@@ -28,20 +31,20 @@ export class ConfirmService {
   ) {}
 
   async init() {
-    await this.setRateLimitValues();
-    this.logger.log(`Confirm service initialized`);
-  }
-
-  private async setRateLimitValues() {
     try {
-      const { endpoints } = await this.biscoint.meta();
-      const { windowMs, maxRequests } =
-        endpoints['offer/confirm'].post.rateLimit;
-      this.windowMs = windowMs;
-      this.maxRequests = maxRequests;
+      const meta = await this.biscoint.meta();
+      this.setRateLimitValues(meta);
+      this.logger.log(`Confirm service initialized`);
     } catch (e) {
       this.logger.error(e);
     }
+  }
+
+  private async setRateLimitValues(meta: IMetaResult) {
+    const { windowMs, maxRequests } =
+      meta.endpoints['offer/confirm'].post.rateLimit;
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
   }
 
   @RabbitSubscribe({
@@ -117,6 +120,7 @@ export class ConfirmService {
     }
   }
 
+  // TODO Create a rate limited service
   private getWaitIntervalMs(confirmCount: number, elapsedMs: number) {
     const minIntervalMs = Math.ceil(
       (confirmCount * this.windowMs) / this.maxRequests,
