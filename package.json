@@ -32,6 +32,7 @@
     "@nestjs/core": "^8.0.6",
     "@nestjs/platform-express": "^8.2.3",
     "biscoint-api-node": "^1.4.1",
+    "bottleneck": "^2.19.5",
     "joi": "^17.4.2",
     "load-config-file": "^1.0.8",
     "node-emoji": "^1.11.0",

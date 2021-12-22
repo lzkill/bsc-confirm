@@ -4,7 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { RABBITMQ_BISCOINT_EXCHANGE } from 'src/app-constants';
 import { BiscointModule } from 'src/shared/biscoint/biscoint.module';
 import { ConfirmService } from './confirm.service';
-import { TelegramService } from './telegram.service';
+import { RateLimitedBiscointService } from './rate-limited/biscoint.service';
+import { TelegramService } from './rate-limited/telegram.service';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { TelegramService } from './telegram.service';
       },
     }),
   ],
-  providers: [ConfirmService, TelegramService],
+  providers: [ConfirmService, TelegramService, RateLimitedBiscointService],
 })
 export class ConfirmModule {}

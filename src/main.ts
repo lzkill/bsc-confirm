@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ConfirmService } from './confirm/confirm.service';
-import { TelegramService } from './confirm/telegram.service';
+import { RateLimitedBiscointService } from './confirm/rate-limited/biscoint.service';
+import { TelegramService } from './confirm/rate-limited/telegram.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,8 +10,8 @@ async function bootstrap() {
   const telegram = app.get(TelegramService);
   await telegram.init();
 
-  const confirm = app.get(ConfirmService);
-  await confirm.init();
+  const biscoint = app.get(RateLimitedBiscointService);
+  await biscoint.init();
 }
 
 bootstrap();

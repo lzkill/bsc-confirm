@@ -1,16 +1,13 @@
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
-import {
-  IMetaResult,
-  IOfferResult,
-} from 'biscoint-api-node/dist/typings/biscoint';
+import { IOfferResult } from 'biscoint-api-node/dist/typings/biscoint';
 import {
   RABBITMQ_BISCOINT_CONFIRM_KEY,
   RABBITMQ_BISCOINT_EXCHANGE,
 } from 'src/app-constants';
 import { AppConfigService } from 'src/config/config.service';
-import { BiscointService } from 'src/shared/biscoint/biscoint.service';
 import { AppLoggerService } from 'src/shared/logger/logger.service';
+import { RateLimitedBiscointService } from './rate-limited/biscoint.service';
 
 export interface ConfirmJob {
   offers: IOfferResult[];
@@ -19,33 +16,13 @@ export interface ConfirmJob {
 
 @Injectable()
 export class ConfirmService {
-  private windowMs: number;
-  private maxRequests: number;
-
   private jobCount = 0;
 
   constructor(
     private config: AppConfigService,
     private logger: AppLoggerService,
-    private biscoint: BiscointService,
+    private biscoint: RateLimitedBiscointService,
   ) {}
-
-  async init() {
-    try {
-      const meta = await this.biscoint.meta();
-      this.setRateLimitValues(meta);
-      this.logger.log(`Confirm service initialized`);
-    } catch (e) {
-      this.logger.error(e);
-    }
-  }
-
-  private async setRateLimitValues(meta: IMetaResult) {
-    const { windowMs, maxRequests } =
-      meta.endpoints['offer/confirm'].post.rateLimit;
-    this.windowMs = windowMs;
-    this.maxRequests = maxRequests;
-  }
 
   @RabbitSubscribe({
     exchange: RABBITMQ_BISCOINT_EXCHANGE,
@@ -68,7 +45,7 @@ export class ConfirmService {
           canConfirm &&= this.canConfirm(offer);
           let confirmation;
           if (canConfirm) {
-            confirmation = await this._confirm(offer);
+            confirmation = await this.confirmOffer(offer);
             attemptCount += 1;
             confirmCount += confirmation ? 1 : 0;
           }
@@ -86,8 +63,9 @@ export class ConfirmService {
         );
         this.jobCount += 1;
 
-        const waitIntervalMs = this.getWaitIntervalMs(attemptCount, elapsedMs);
-
+        const waitIntervalMs =
+          this.biscoint.getConfirmWaitIntervalMs(elapsedMs);
+        this.biscoint.resetConfirmCount();
         await this.wait(waitIntervalMs);
       }
     } catch (e) {
@@ -105,11 +83,9 @@ export class ConfirmService {
     return expiresAt <= now;
   }
 
-  private async _confirm(offer: IOfferResult) {
+  private async confirmOffer(offer: IOfferResult) {
     try {
-      const confirmation = await this.biscoint.confirm({
-        offerId: offer.offerId,
-      });
+      const confirmation = await this.biscoint.confirmOffer(offer.offerId);
 
       if (confirmation)
         this.logger.log(`Offer ${offer.offerId} confirmed (${offer.op})`);
@@ -118,14 +94,6 @@ export class ConfirmService {
     } catch (e) {
       this.logger.error(e);
     }
-  }
-
-  // TODO Create a rate limited service
-  private getWaitIntervalMs(confirmCount: number, elapsedMs: number) {
-    const minIntervalMs = Math.ceil(
-      (confirmCount * this.windowMs) / this.maxRequests,
-    );
-    return Math.max(minIntervalMs - elapsedMs, 0);
   }
 
   private wait(ms) {
