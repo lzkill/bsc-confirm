@@ -40,17 +40,18 @@ export class ConfirmService {
         let attemptCount = 0; // how many confirms have been attempted?
         let confirmCount = 0; // how many confirms have been actually done?
 
-        let canConfirm = true;
-        for (const offer of job.offers) {
-          canConfirm &&= this.canConfirm(offer);
-          let confirmation;
-          if (canConfirm) {
-            confirmation = await this.confirmOffer(offer);
-            attemptCount += 1;
-            confirmCount += confirmation ? 1 : 0;
-          }
+        if (this.canConfirm(job.offers)) {
+          let mustStop = false;
+          for (const offer of job.offers) {
+            let confirmation;
+            if (!mustStop) {
+              confirmation = await this.confirmOffer(offer);
+              attemptCount += 1;
+              confirmCount += confirmation ? 1 : 0;
+            }
 
-          canConfirm &&= job.stopOnFail ? confirmation : true;
+            mustStop ||= confirmation ? false : job.stopOnFail;
+          }
         }
 
         const finishedAt = Date.now();
@@ -73,14 +74,19 @@ export class ConfirmService {
     }
   }
 
-  private canConfirm(offer: IOfferResult) {
-    return offer && !this.isExpired(offer);
-  }
-
-  private isExpired(offer: IOfferResult) {
-    const expiresAt = new Date(offer.expiresAt).getTime();
+  private canConfirm(offers: IOfferResult[]) {
+    const avgConfirmTime = this.biscoint.getAvgConfirmTime();
     const now = Date.now();
-    return expiresAt <= now;
+
+    let canConfirm = true;
+    for (let i = 0; i < offers.length; i++) {
+      const offer = offers[i];
+      const expiresAt =
+        new Date(offer.expiresAt).getTime() + avgConfirmTime * (i + 1);
+      canConfirm &&= expiresAt < now;
+    }
+
+    return canConfirm;
   }
 
   private async confirmOffer(offer: IOfferResult) {
