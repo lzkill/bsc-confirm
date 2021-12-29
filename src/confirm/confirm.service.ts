@@ -81,9 +81,9 @@ export class ConfirmService {
     let canConfirm = true;
     for (let i = 0; i < offers.length; i++) {
       const offer = offers[i];
-      const expiresAt =
-        new Date(offer.expiresAt).getTime() + avgConfirmTime * (i + 1);
-      canConfirm &&= expiresAt < now;
+      const expiresAt = new Date(offer.expiresAt).getTime();
+      const timeRequired = avgConfirmTime * (i + 1);
+      canConfirm &&= now + timeRequired <= expiresAt;
     }
 
     return canConfirm;
