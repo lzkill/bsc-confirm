@@ -1,10 +1,8 @@
 {
   "app": {
     "name": "bsc-confirm",
-    "ema": {
-      "interval": 5,
-      "initialValue": 500
-    },
+    "emaInterval": 5,
+    "emaInitialValue": 500,
     "enabled": true
   },
   "biscoint": {

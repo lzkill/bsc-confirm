@@ -2,14 +2,10 @@ import * as joi from 'joi';
 
 export const positiveIntegerSchema = joi.number().positive().precision(0);
 
-export const emaSchema = joi.object({
-  interval: positiveIntegerSchema.default(5),
-  initialValue: positiveIntegerSchema.default(500),
-});
-
 export const appSchema = joi.object({
   name: joi.string().required(),
-  ema: emaSchema,
+  emaInterval: positiveIntegerSchema.default(5),
+  emaInitialValue: positiveIntegerSchema.default(500),
   enabled: joi.boolean().default(true),
 });
 
@@ -35,14 +31,10 @@ export const telegramSchema = joi.object({
   enabled: joi.boolean().default(false),
 });
 
-export interface EmaConfig {
-  interval: number;
-  initialValue: number;
-}
-
 export interface AppConfig {
   name: string;
-  ema: EmaConfig;
+  emaInterval: number;
+  emaInitialValue: number;
   enabled: boolean;
 }
 

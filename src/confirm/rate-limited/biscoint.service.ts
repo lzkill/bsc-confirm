@@ -22,8 +22,8 @@ export class RateLimitedBiscointService {
   }
 
   private initConfirmEma() {
-    const interval = this.config.app.ema.interval;
-    const initialValue = this.config.app.ema.initialValue;
+    const interval = this.config.app.emaInterval;
+    const initialValue = this.config.app.emaInitialValue;
     this.confirmEma = new FasterEMA(interval);
     for (let i = 0; i < interval; i++) {
       this.confirmEma.update(initialValue);
